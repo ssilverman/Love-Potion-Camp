@@ -106,7 +106,7 @@ class HardwareTest extends Drawer {
       }
     }
     
-    println( "keyPressed cursorStrand:"  + (cursorStrand + 1) +  "cursorOrdinal:" + (cursorOrdinal + 1));
+    println( "keyPressed " + key + " cursorStrand:"  + (cursorStrand + 1) +  "cursorOrdinal:" + (cursorOrdinal + 1));
   }
   
   String[] getTextLines() {

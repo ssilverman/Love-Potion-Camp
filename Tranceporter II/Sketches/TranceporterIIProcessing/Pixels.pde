@@ -364,11 +364,7 @@ class Pixels {
     assert(strandMap[index] == TC_PIXEL_UNDEFINED) : "led " + ordinal + " on strand " + whichStrand + " is already defined: " + strandMap[index];
     strandMap[index] = value;
   }
-  
-  void ledMissing(int whichStrand, int ordinal) {
-    ledSetValue(whichStrand, ordinal, TC_PIXEL_UNUSED);
-  }
-  
+    
   int xOffsetter;
   int yOffsetter;
   int ordinalOffsetter;
@@ -376,13 +372,11 @@ class Pixels {
   int biggestX = -1;
   int biggestY = -1;
   
-  void ledSet(int whichStrand, int ordinal, int x, int y) {
-    //    ledSetValue(whichStrand, ordinal, c2i(x,y+20));
+  void ledSetNew(int whichStrand, int xOffsetter, int yOffsetter, int ordinalOffsetter, int ordinal, int x, int y) {
     biggestX = max(x + xOffsetter, biggestX);
     biggestY = max(y + yOffsetter, biggestY);
     ledSetValue(whichStrand, ordinal + ordinalOffsetter, c2i(x + xOffsetter, y + yOffsetter));
   }
-
   
   int ledGetRawValue(int whichStrand, int ordinal, boolean useTrainingMode) {
     assert(whichStrand < getNumStrands()) : "not this many strands";
