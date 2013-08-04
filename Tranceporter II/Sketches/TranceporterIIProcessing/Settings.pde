@@ -1,7 +1,7 @@
 import java.lang.reflect.*;
 
 class Settings {
-  
+
   private ArrayList oscMessages = new ArrayList();;
   private boolean[][] whichModes = new boolean[3][5];
   private color[] palette;
@@ -15,7 +15,7 @@ class Settings {
   private int paletteType;
   List<String> keyNames;
   List<String> keyGlobalNames;
-  
+
   final String keySpeed = "/pageControl/speed";
   final String keyColorCyclingSpeed = "/pageControl/cycling";
   final String keyCustom1 = "/pageControl/custom1";
@@ -37,21 +37,21 @@ class Settings {
   final String keyCustom1Label = "/pageControl/custom1_label";
   final String keyCustom2Label = "/pageControl/custom2_label";
   final String keyFlash = "/pageAudio/flashToggle";
-  
+
   final String keyModeName = "/pageControl/mode";
   final String keyPaletteName = "/pageControl/palette";
-  
+
   final String keyGlobalAutoChangeSpeed = "/sketches/autoChange";
   final String keyGlobalAutoChangeSpeedLabel = "/sketches/autoChange_label";
-  
+
   Settings(int numBands) {
-    
+
     //get the list of key constants
     ArrayList localModeList =  new ArrayList();
     ArrayList globalList =  new ArrayList();
 
     Class cls = this.getClass();
-    
+
     try {
       Field fieldlist[] = cls.getDeclaredFields();
       for (int i = 0; i < fieldlist.length; i++) {
@@ -59,7 +59,7 @@ class Settings {
         if (fld.getType() != String.class || !Modifier.isFinal(fld.getModifiers())) {
           continue;
         }
-        
+
         String name = fld.getName();
         if (name.startsWith("keyGlobal")){
           fld.setAccessible(true);
@@ -74,15 +74,15 @@ class Settings {
       }
       keyNames = localModeList;
       keyGlobalNames = globalList;
-      
+
     }
     catch (Exception e){
       assert false : "got exception: " + e;
     }
-    
+
     this.numBands = numBands;
     setDefaultSettings();
-    
+
     actions = new HashMap();
     actions.put("/pageControl/multixy1/1",    new FunctionFloatFloat() {
         public void function(float x, float y) {
@@ -104,7 +104,7 @@ class Settings {
         public void function(float x, float y) {
           main.touchXY(5, x, y);
         }});
-    
+
     actions.put("/pageControl/newEffect",     new VoidFunction() {
         public void function() {
           main.newEffect();
@@ -126,18 +126,18 @@ class Settings {
         public void function() {
           main.currentMode().manualFlash = true;
         }});
-    
-    
+
+
     paramGlobalMap = new HashMap();
     setParam(keyGlobalAutoChangeSpeed, 1.0);
     updateSketchesFromPrefs();
 
    }
-  
+
   int numBands() {
     return numBands;
   }
-  
+
   color[] getPalette() {
     return palette;
   }
@@ -145,19 +145,19 @@ class Settings {
   boolean isBeat(int band) {
     return isBeat[band];
   }
-  
+
   void setIsBeat(int band, boolean state) {
     isBeat[band] = state;
   }
-  
+
   float beatPos(int band) {
     return main.beatDetect.beatPos("spectralFlux", band);
   }
-  
+
   float beatPosSimple(int band) {
     return main.beatDetect.beatPosSimple("spectralFlux", band);
   }
-  
+
   ////////////////////////////////////////////////////////////////////
   //General Setting Management
 
@@ -169,7 +169,7 @@ class Settings {
       paramGlobalMap.put(paramName, value);
     }
   }
-  
+
   float getParam(String paramName) {
     Object result = null;
     if (keyNames.contains(paramName)) {
@@ -184,13 +184,13 @@ class Settings {
     assert result != null : "getParam does not have " + paramName + "\nresult = " + result + "\nparamMap = " + paramMap;
     return (Float) result;
   }
-  
+
   void setDefaultSettings() {
     isBeat = new boolean[numBands];
     paramMap = new HashMap();
     palette = null;
     paletteType = 0;
-    
+
     setParam(keySpeed, 0.3);
     setParam(keyColorCyclingSpeed, 0.3);
     setParam(keyCustom1, 0.3);
@@ -219,7 +219,7 @@ class Settings {
     saver.put("2", utility.toIntegerList(palette));
     saver.put("3", utility.toBooleanList(isBeat));
     saver.put("4", paletteType);
-    
+
     if (newSettings == null) {
       println("newSettings are null");
       setDefaultSettings();
@@ -234,9 +234,9 @@ class Settings {
     }
     return saver;
   }
-  
 
- 
+
+
 ////////////////////////////////////////////////////////////////////
 //Key helpers
 
@@ -253,7 +253,7 @@ class Settings {
     }
     return null;
   }
-  
+
   String getKeyAudioColorChange(int index) {
     switch(index) {
       case 0:
@@ -267,7 +267,7 @@ class Settings {
     }
     return null;
   }
-  
+
   String getKeyAudioBrightnessChange(int index) {
     switch(index) {
       case 0:
@@ -281,7 +281,7 @@ class Settings {
     }
     return null;
   }
-  
+
   String getKeyAudioSensitivity(int index) {
     switch(index) {
       case 0:
@@ -295,20 +295,20 @@ class Settings {
     }
     return null;
   }
-  
-  
+
+
 ////////////////////////////////////////////////////////////////////
 //OSC 5 stuff
   void initOSC() {
     oscP5 = new OscP5(this, 8000);
     oscReceiver = new NetAddress(iPadIP, 9000);
-}
+  }
 
   private void enableControl(String controlKey, boolean enabled) {
     sendMessageToIPad(controlKey + "/visible", enabled?"1":"0");
   }
-  
-  /* this comes in on a different thread than 
+
+  /* this comes in on a different thread than
    the draw routines, so we need to add to a queue
    and then process the events during the heartbeat
    which is called from the main draw
@@ -322,7 +322,7 @@ class Settings {
 
   //call once per draw to process events
   void heartBeat() {
-//TODO: Not sure how much synchronized slows down our framerate. 
+//TODO: Not sure how much synchronized slows down our framerate.
 //    if (oscMessages.size() == 0)
 //      return;
     synchronized(oscMessages)
@@ -333,25 +333,79 @@ class Settings {
       }
       oscMessages.clear();
     }
-    
+  }
+
+  void handleWiiEvent(OscMessage msg) {
+    String address = msg.addrPattern();
+    System.out.println("ADDRESS=" + address);
+    int wiiIndex = address.indexOf("/wii/");
+    if (wiiIndex < 0) return;
+
+    String[] parts = address.substring(wiiIndex + 5).split("/");
+    if (parts.length < 2) return;
+
+    Object[] args = msg.arguments();
+    if (args == null || args.length == 0) return;
+
+    if ("button".equals(parts[1])) {
+      wiimoteButton(parts[2], args[0].equals(1));
+    } else if ("accel".equals(parts[1])) {
+      if ("xyz".equals(parts[2])) {
+        if ("fff".equals(msg.typetag())) {
+          wiimoteAccel((Float)args[0], (Float)args[1], (Float)args[2]);
+        }
+      } else if ("pry".equals(parts[2])) {
+        if ("ffff".equals(msg.typetag())) {
+//            wiimotePosition((float)args[0], (float)args[0], (float)args[1]);
+        }
+      }
+    }
+  }
+
+  void wiimoteButton(String name, boolean state) {
+    System.out.println("Button: " + name + " (" + state + ")");
+  }
+
+  void wiimoteAccel(float x, float y, float z) {
+    System.out.println("Accel: " + x + ", " + y + ", " + z);
+  }
+
+  /**
+   * Checks whether we should ignore the IP address of the message, for example when receiving
+   * messages from a Wii controller.
+   *
+   * @param msg the OSC message
+   * @return whether to ignore the IP address in the message.
+   */
+  boolean ignoreIpAddress(OscMessage msg) {
+    return msg.addrPattern().startsWith("/wii/");
   }
 
   /* unplugged OSC messages */
   void handleOscEvent(OscMessage msg) {
     String addr = msg.addrPattern();
+    System.out.println("ADDR=" + addr);
     try {
-      String ipAddress = msg.netAddress().address();
-      if (ipAddress != null && ipAddress.length() > 0 && !ipAddress.equals(iPadIP)) {
-        detectedNewIPadAddress(ipAddress);
+      System.out.println("IGNORE: " + ignoreIpAddress(msg));
+      if (!ignoreIpAddress(msg)) {
+        String ipAddress = msg.netAddress().address();
+        if (ipAddress != null && ipAddress.length() > 0 && !ipAddress.equals(iPadIP)) {
+          detectedNewIPadAddress(ipAddress);
+        }
       }
-      
+
+      if (addr.startsWith("/wii/")) {
+        handleWiiEvent(msg);
+        return;
+      }
+
       Object func = actions.get(addr);
       if (func != null) {
         println("\naction = " + addr);
         if (addr.indexOf("/multixy") >= 0) {
           ((FunctionFloatFloat)func).function(msg.get(0).floatValue(), msg.get(1).floatValue());
         }
-        else { 
+        else {
           if (msg.get(0).floatValue() != 1.0) {
             ((VoidFunction)func).function();
           }
@@ -366,7 +420,7 @@ class Settings {
         float value = msg.get(0).floatValue();
         paramGlobalMap.put(addr, value);
         println("Set global " + addr + " to " + value);
-        
+
         if (addr.equals(keyGlobalAutoChangeSpeed)) {
           assert(getParam(keyGlobalAutoChangeSpeed) == value);
           updateLabelForAutoChanger();
@@ -402,7 +456,7 @@ class Settings {
     oscReceiver = new NetAddress(iPadIP, 9000);
     sendEntireGUIToIPad();
   }
-  
+
   void sendMessageToIPad(String key, String value) {
     OscMessage myMessage = new OscMessage(key);
     myMessage.add(value);
@@ -414,10 +468,10 @@ class Settings {
     myMessage.add(value);
     oscP5.send(myMessage, oscReceiver);
   }
-  
+
   /*
    Send Sketch specific control values to the iPad.
-   Normally these need to be updated when we switch to a new Sketch, 
+   Normally these need to be updated when we switch to a new Sketch,
    since each Sketch tracks its own set of values.
    */
   void sendControlValuesForThisSketchToIPad() {
@@ -434,14 +488,14 @@ class Settings {
     sendMessageToIPad(keyPaletteName, main.pm.getPaletteDisplayName());
     currentMode.sendToIPad();
   }
-  
+
   /*
    When we first talk to iPad, initialize it with all
-   of the control labels and values. 
+   of the control labels and values.
    */
   void sendEntireGUIToIPad() {
     // TODO: these methods may need to go on another thread to speed things up
-    
+
     Drawer[][] modes = main.modes;
 
     for (int col = 0; col < modes.length; col++) {
@@ -450,14 +504,14 @@ class Settings {
         sendMessageToIPad(sketchLabelName(col, row), name);
       }
     }
-    
+
     updateLabelForAutoChanger();
     sendSketchGridTogglesToIPad();
     sendControlValuesForThisSketchToIPad();
     main.hardwareTestEffect.sendToIPad();
   }
-  
-  
+
+
   void handleSketchToggles(String addr, float value) {
     String substring = addr.substring("/sketches/col".length());
     println("value = " + value + " substring = " + substring);
@@ -465,7 +519,7 @@ class Settings {
       String[] temp = substring.split("row");
       int col = Integer.parseInt(temp[0]);
       int row = Integer.parseInt(temp[1]);
-      
+
       setSketchOn(col, row, value > 0?true:false);
     }
     else {
@@ -473,25 +527,25 @@ class Settings {
         int col = Integer.parseInt(substring);
         println("toggle col = " + col);
         toggleColumn(col);
-        
+
       }
     }
   }
-  
+
   void toggleColumn(int column) {
     int numRows = whichModes[column].length;
     boolean on = whichModes[column][0];
-    
+
     for (int row = 0; row < numRows; row++) {
       setSketchOn(column, row, !on);
     }
     sendSketchGridTogglesToIPad();
   }
-  
+
   void sendSketchGridTogglesToIPad() {
     int numCols = whichModes.length;
     int numRows = whichModes[0].length;
-    
+
     for (int col = 0; col < numCols; col++) {
       for (int row = 0; row < numRows; row++) {
         sendMessageToIPad(sketchName(col, row) + "/toggle", whichModes[col][row]?"1":"0");
@@ -509,18 +563,18 @@ class Settings {
     prefs.putBoolean(sketchName(col, row), state);
     needToFlushPrefs = true;
   }
-  
+
   void updateSketchesFromPrefs() {
     int numCols = whichModes.length;
     int numRows = whichModes[0].length;
-    
+
     for (int col = 0; col < numCols; col++) {
       for (int row = 0; row < numRows; row++) {
         whichModes[col][row] = prefs.getBoolean(sketchName(col, row), true);
       }
     }
   }
-  
+
   String sketchName(int col, int row) {
     return "/sketches/col" + col + "row" + row;
   }
@@ -528,7 +582,7 @@ class Settings {
   String sketchLabelName(int col, int row) {
     return sketchName(col, row) + "_label";
   }
-  
+
   float speedWithAudioSpeed() {
     float speed = getParam(keySpeed);
     for (int i=0; i < main.NUM_BANDS; i++) {
@@ -544,15 +598,15 @@ class Settings {
     if (result == 1.0) {
       return Integer.MAX_VALUE;
     }
-    
+
     float MAX_SECONDS = 60*10; //10 minutes
     float MIN_SECONDS = 10;    //10 seconds
-    
+
     float seconds = result;
     seconds *= sqrt(MAX_SECONDS - MIN_SECONDS);
     seconds *= seconds; //exponential control
     seconds += MIN_SECONDS;
-    
+
     if (seconds < 30) {
     }
     else if (seconds < 90) {
@@ -563,16 +617,16 @@ class Settings {
       seconds = round(seconds / 30.0);
       seconds *= 30;
     }
-  
+
     return (int)(seconds * 1000);
   }
-  
+
   void updateLabelForAutoChanger() {
     int milliseconds = millisBetweenAutoChanges();
-    
+
     int seconds = round(milliseconds/1000.0);
     String label = "AutoChange " + seconds + "s";
-    
+
     if (milliseconds == Integer.MAX_VALUE) {
       label = "AutoChange Never";
     }
